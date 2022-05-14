@@ -21,7 +21,7 @@ import 'package:sqflite/utils/utils.dart';
 class User extends ChangeNotifier {
   late final ChangeNotifierProvider<User> pro;
   late final Account account;
-  late final Chat? chat;
+  Chat? chat;
   late final ID id;
   late UserState state;
   late String name;

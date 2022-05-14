@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -26,12 +27,12 @@ class Chat extends ChangeNotifier {
   late final messages = NotifierListQueueNotifier<Message>(ListQueue.of([]));
   late final messagesPro = ChangeNotifierProvider<NotifierListQueueNotifier<Message>>((ref) => messages);
   DateTime time;
-  late DateTime lastReadMsgTime;
+  late int lastReadMsgTime;
   var numUnread = 0;
 
-  Chat(this.account, this.id, this.type, {required this.time, this.user, this.group, DateTime? lastReadMsgTime, this.numUnread = 0}) {
+  Chat(this.account, this.id, this.type, {required this.time, this.user, this.group, int? lastReadMsgTime, this.numUnread = 0}) {
     pro = ChangeNotifierProvider((_) => this);
-    this.lastReadMsgTime = lastReadMsgTime ?? time;
+    this.lastReadMsgTime = lastReadMsgTime ?? time.microsecondsSinceEpoch;
   }
 
   Future<int> loadMoreMessages() async {
@@ -67,11 +68,11 @@ class Chat extends ChangeNotifier {
     return visited.length;
   }
 
-  setLastReadMsgTime(DateTime dateTime) {
-    if (lastReadMsgTime.microsecondsSinceEpoch <= dateTime.microsecondsSinceEpoch) return;
-    lastReadMsgTime = dateTime;
+  setLastReadMsgTime(int timestamp) {
+    if (lastReadMsgTime <= timestamp) return;
+    lastReadMsgTime = timestamp;
     notifyListeners();
-    account.db.update('chat', {'c_last_read_msg_time': dateTime.microsecondsSinceEpoch}, where: 'hex(c_id) = ?', whereArgs: [hex(id.l)]);
+    account.db.update('chat', {'c_last_read_msg_time': timestamp}, where: 'hex(c_id) = ?', whereArgs: [hex(id.l)]);
     logger.d('chat: set last read message time');
   }
 
@@ -83,7 +84,7 @@ class Chat extends ChangeNotifier {
         'c_id': id.l,
         'c_type': type.index,
         'c_time': time.microsecondsSinceEpoch,
-        'c_last_read_msg_time': lastReadMsgTime.microsecondsSinceEpoch,
+        'c_last_read_msg_time': lastReadMsgTime,
         'c_num_unread': numUnread,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -105,6 +106,7 @@ class Chat extends ChangeNotifier {
   addUnreadMessage(Message message) {
     messages.add(message);
     time = message.time;
+    lastReadMsgTime = min(lastReadMsgTime, message.time.microsecondsSinceEpoch);
     numUnread++;
     logger.d('addUnreadMessage: $numUnread');
     notifyListeners();

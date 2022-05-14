@@ -151,7 +151,7 @@ class _MessageListState extends ConsumerState<MessageList> {
       itemBuilder: (context, index) {
         final message = widget.chat.messages[index];
         final isSendFromMe = providers.read(message).senderID == widget.chat.account.id;
-        widget.chat.setLastReadMsgTime(providers.read(message).time);
+        widget.chat.setLastReadMsgTime(providers.read(message).time.microsecondsSinceEpoch);
         var row = [
           Flexible(
             child: Container(

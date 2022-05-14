@@ -171,7 +171,7 @@ class Account extends ChangeNotifier {
             ChatType.values[row['c_type'] as int],
             time: DateTime.fromMicrosecondsSinceEpoch(row['c_time'] as int),
             user: users.putIfAbsent(id, () => User(id)..account = this)..setFromRow(row),
-            lastReadMsgTime: DateTime.fromMicrosecondsSinceEpoch(row['c_last_read_msg_time'] as int),
+            lastReadMsgTime: row['c_last_read_msg_time'] as int,
             numUnread: row['c_num_unread'] as int,
           );
       if (row['m_id'] != null) {
