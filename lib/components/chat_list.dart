@@ -129,9 +129,10 @@ class _ChatTileState extends ConsumerState<ChatTile> {
                               child: ref.watch(widget.chat.pro.select((chat) => chat.numUnread == 0))
                                   ? const SizedBox(width: 30)
                                   : Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 7),
                                       decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(6),
+                                        color: secondaryColor,
+                                        borderRadius: BorderRadius.circular(15),
                                       ),
                                       constraints: const BoxConstraints(
                                         minWidth: 12,
@@ -139,8 +140,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
                                       ),
                                       child: Text(
                                         ref.watch(widget.chat.pro.select((chat) => chat.numUnread.toString())),
-                                        style: const TextStyle(color: Colors.white, fontSize: 8),
-                                        // textAlign: TextAlign.center,
+                                        style: const TextStyle(color: Colors.white),
                                       ),
                                     ),
                             ),
