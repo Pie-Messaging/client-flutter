@@ -8,6 +8,7 @@ import 'package:pie/lib/global.dart';
 import 'package:pie/lib/id.dart';
 import 'package:pie/lib/log.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/utils/utils.dart';
 
 class AddContactPage extends ConsumerStatefulWidget {
   const AddContactPage({Key? key}) : super(key: key);
@@ -152,8 +153,8 @@ class _AddContactPageState extends ConsumerState<AddContactPage> {
     final account = providers.read(currAccountPro)!;
     if (id == account.id) return returnHook(_FindUserResult(_FindUserState.isSelf));
     final result = await account.db.rawQuery(
-      'SELECT EXISTS(SELECT * FROM user WHERE u_id = ? AND u_state > ?)',
-      [id.toHexStr(), UserState.noRelation.index],
+      'SELECT EXISTS(SELECT * FROM user WHERE hex(u_id) = ? AND u_state > ?)',
+      [hex(id.l), UserState.noRelation.index],
     );
     if (Sqflite.firstIntValue(result) == 1) return returnHook(_FindUserResult(_FindUserState.alreadyExists));
     final user = await routingTable.findUserForAddingContact(ctx, id, certHash);

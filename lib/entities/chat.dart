@@ -41,11 +41,11 @@ class Chat extends ChangeNotifier {
       '''
         SELECT * FROM message
         LEFT JOIN message_file ON mf_message_id = m_id
-        WHERE m_chat_id = ? AND m_time < ?
+        WHERE hex(m_chat_id) = ? AND m_time < ?
         ORDER BY m_time DESC
         LIMIT $numMessageLoad
       ''',
-      [id.toHexStr(), providers.read(messages.l.first).time.microsecondsSinceEpoch],
+      [hex(id.l), providers.read(messages.l.first).time.microsecondsSinceEpoch],
     );
     logger.d('loadMessages: ${results.length}');
     final visited = <ID, Message>{};

@@ -111,7 +111,7 @@ class Account extends ChangeNotifier {
           addr = addrList.map((k, v) => MapEntry('[$k]:${server.listenPort}', v)).toAddr();
         }(),
       ], eagerError: true);
-      logger.i('account: $id addr: ${addr.keys}');
+      logger.i('account: $id name:$name addr: ${addr.keys.first}');
       routingTable.putUser(0, this);
     } catch (e, s) {
       logger.e('announce error: $e\n$s');
