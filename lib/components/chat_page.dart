@@ -14,7 +14,6 @@ import 'package:pie/entities/file.dart';
 import 'package:pie/entities/message.dart';
 import 'package:pie/entities/user.dart';
 import 'package:pie/lib/config.dart';
-import 'package:pie/lib/global.dart';
 import 'package:pie/lib/id.dart';
 import 'package:pie/lib/log.dart';
 import 'package:pie/lib/time.dart';
@@ -150,8 +149,9 @@ class _MessageListState extends ConsumerState<MessageList> {
       itemCount: ref.watch(widget.chat.messagesPro).length,
       itemBuilder: (context, index) {
         final message = widget.chat.messages[index];
-        final isSendFromMe = providers.read(message).senderID == widget.chat.account.id;
-        widget.chat.setLastReadMsgTime(providers.read(message).time.microsecondsSinceEpoch);
+        final isSendFromMe = message.senderID == widget.chat.account.id;
+        // use task to avoid change state when build
+        Future(() => widget.chat.setMessageRead(message));
         var row = [
           Flexible(
             child: Container(
@@ -162,7 +162,7 @@ class _MessageListState extends ConsumerState<MessageList> {
               ),
               child: Column(
                 children: [
-                  for (final file in providers.read(message).files)
+                  for (final file in ref.watch(message.pro.select((msg) => msg.files)))
                     ref.watch(file.loadingPro).when(
                           loading: () => const CircularProgressIndicator(),
                           error: (e, _) => CenterError(e),
@@ -173,7 +173,7 @@ class _MessageListState extends ConsumerState<MessageList> {
                           ),
                         ),
                   Text(
-                    ref.watch(message.select((message) => message.content)),
+                    ref.watch(message.pro.select((message) => message.content)),
                     style: const TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ],
@@ -185,7 +185,7 @@ class _MessageListState extends ConsumerState<MessageList> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
-                formatTime(ref.watch(message.select((message) => message.time))),
+                formatTime(ref.watch(message.pro.select((message) => message.time))),
                 style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
               ),
             ],
@@ -286,15 +286,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     if (results == null || results.files.isEmpty) return;
     _controller.clear();
     final user = widget.chat.user!;
-    final message = Message()
-      ..account = widget.chat.account
-      ..chatID = widget.chat.id
-      ..id = ID.generate()
-      ..isSysMsg = false
-      ..time = DateTime.now()
-      ..content = content
-      ..files.addAll(results.files.map((file) => MsgFile(widget.chat.account, MsgFileType.unknown)..complete(file.path)))
-      ..senderID = widget.chat.account.id;
+    final message = Message(widget.chat.account, widget.chat, ID.generate(), DateTime.now(), content, senderID: widget.chat.account.id, isRead: true)
+      ..files.addAll(results.files.map((file) => MsgFile(widget.chat.account, MsgFileType.unknown)..complete(file.path)));
     widget.chat.addMessage(message);
     await Future.wait([
       () async {
@@ -360,14 +353,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     _controller.clear();
     final user = widget.chat.user!;
     final id = ID.generate();
-    final message = Message()
-      ..account = widget.chat.account
-      ..chatID = widget.chat.id
-      ..id = id
-      ..isSysMsg = false
-      ..time = DateTime.now()
-      ..content = content
-      ..senderID = widget.chat.account.id;
+    final message = Message(widget.chat.account, widget.chat, id, DateTime.now(), content, senderID: widget.chat.account.id, isRead: true);
     widget.chat.addMessage(message);
     await Future.wait([
       message.save(),

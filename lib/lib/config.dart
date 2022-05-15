@@ -41,8 +41,8 @@ const certPEMLen = 302;
 const keyPEMLen = 119;
 const certDERLen = 182;
 
-const sendMsgTimeout = 3000;
-const recvResTimeout = 6000;
+const sendMsgTimeout = 6000;
+const recvResTimeout = 10000;
 const serverRecvMsgTimeout = 30000;
 
 const fileBlockSize = 1 * 1024 * 1024;

@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -10,7 +9,6 @@ import 'package:pie/entities/group.dart';
 import 'package:pie/entities/message.dart';
 import 'package:pie/entities/user.dart';
 import 'package:pie/lib/config.dart';
-import 'package:pie/lib/global.dart';
 import 'package:pie/lib/id.dart';
 import 'package:pie/lib/log.dart';
 import 'package:pie/lib/notifier.dart';
@@ -20,20 +18,27 @@ import 'package:sqflite/utils/utils.dart';
 class Chat extends ChangeNotifier {
   late final ChangeNotifierProvider<Chat> pro;
   late final Account account;
-  final ID id;
-  final ChatType type;
+  late final ChatType type;
   late final User? user;
   late final Group? group;
-  late final messages = NotifierListQueueNotifier<Message>(ListQueue.of([]));
-  late final messagesPro = ChangeNotifierProvider<NotifierListQueueNotifier<Message>>((ref) => messages);
-  DateTime time;
-  late int lastReadMsgTime;
-  var numUnread = 0;
+  late final messages = ListQueueNotifier<Message>(ListQueue.of([]));
+  late final messagesPro = ChangeNotifierProvider<ListQueueNotifier<Message>>((_) => messages);
+  late DateTime time;
+  Message? firstUnreadMsg;
+  int numUnread;
 
-  Chat(this.account, this.id, this.type, {required this.time, this.user, this.group, int? lastReadMsgTime, this.numUnread = 0}) {
+  Chat(this.account, {this.user, this.group, this.firstUnreadMsg, this.numUnread = 0}) {
     pro = ChangeNotifierProvider((_) => this);
-    this.lastReadMsgTime = lastReadMsgTime ?? time.microsecondsSinceEpoch;
+    if (user != null) {
+      type = ChatType.private;
+    } else if (group != null) {
+      type = ChatType.group;
+    } else {
+      throw Exception('Chat type is not specified');
+    }
   }
+
+  ID get id => type == ChatType.private ? user!.id : group!.id;
 
   Future<int> loadMoreMessages() async {
     if (messages.isEmpty) return 0;
@@ -45,7 +50,7 @@ class Chat extends ChangeNotifier {
         ORDER BY m_time DESC
         LIMIT $numMessageLoad
       ''',
-      [hex(id.l), providers.read(messages.l.first).time.microsecondsSinceEpoch],
+      [hex(id.l), messages.l.first.time.microsecondsSinceEpoch],
     );
     logger.d('loadMessages: ${results.length}');
     final visited = <ID, Message>{};
@@ -55,9 +60,7 @@ class Chat extends ChangeNotifier {
       if (visited.containsKey(messageID)) {
         message = visited[messageID]!;
       } else {
-        message = Message.fromRow(row)
-          ..account = account
-          ..chatID = id;
+        message = Message.fromRow(row, account, this);
         visited[message.id] = message;
         messages.addFirst(message);
       }
@@ -68,27 +71,22 @@ class Chat extends ChangeNotifier {
     return visited.length;
   }
 
-  setLastReadMsgTime(int timestamp) {
-    if (lastReadMsgTime <= timestamp) return;
-    lastReadMsgTime = timestamp;
+  setMessageRead(Message message) {
+    if (message.isRead != false) return;
+    logger.d('set message read: is read: ${message.isRead}');
+    message.setRead();
+    firstUnreadMsg ??= message;
+    numUnread--;
     notifyListeners();
-    account.db.update('chat', {'c_last_read_msg_time': timestamp}, where: 'hex(c_id) = ?', whereArgs: [hex(id.l)]);
-    logger.d('chat: set last read message time');
-  }
-
-  save([Transaction? txn]) async {
-    final handler = txn ?? account.db;
-    await handler.insert(
-      'chat',
-      {
-        'c_id': id.l,
-        'c_type': type.index,
-        'c_time': time.microsecondsSinceEpoch,
-        'c_last_read_msg_time': lastReadMsgTime,
-        'c_num_unread': numUnread,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    account.db.transaction((txn) async {
+      await txn.update(
+        'chat',
+        {'c_first_unread_msg_id': firstUnreadMsg?.id.l, 'c_num_unread': numUnread},
+        where: 'hex(c_id) = ?',
+        whereArgs: [hex(id.l)],
+      );
+      await txn.update('message', {'m_is_read': 1}, where: 'hex(m_id) = ?', whereArgs: [hex(message.id.l)]);
+    });
   }
 
   addMessage(Message message) {
@@ -106,10 +104,25 @@ class Chat extends ChangeNotifier {
   addUnreadMessage(Message message) {
     messages.add(message);
     time = message.time;
-    lastReadMsgTime = min(lastReadMsgTime, message.time.microsecondsSinceEpoch);
+    firstUnreadMsg ??= message;
     numUnread++;
     logger.d('addUnreadMessage: $numUnread');
     notifyListeners();
+  }
+
+  save([Transaction? txn]) async {
+    final handler = txn ?? account.db;
+    await handler.insert(
+      'chat',
+      {
+        'c_id': id.l,
+        'c_type': type.index,
+        'c_time': time.microsecondsSinceEpoch,
+        'c_first_unread_msg_id': firstUnreadMsg?.id.l,
+        'c_num_unread': numUnread,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 }
 

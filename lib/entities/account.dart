@@ -167,21 +167,17 @@ class Account extends ChangeNotifier {
       final chat = visited[(row['c_id'] as Uint8List)] ??
           Chat(
             this,
-            (row['c_id'] as Uint8List).toID(),
-            ChatType.values[row['c_type'] as int],
-            time: DateTime.fromMicrosecondsSinceEpoch(row['c_time'] as int),
             user: users.putIfAbsent(id, () => User(id)..account = this)..setFromRow(row),
-            lastReadMsgTime: row['c_last_read_msg_time'] as int,
             numUnread: row['c_num_unread'] as int,
-          );
+          )
+        ..time = DateTime.fromMicrosecondsSinceEpoch(row['c_time'] as int);
       if (row['m_id'] != null) {
         late final Message message;
         if (chat.messages.isNotEmpty) {
-          message = providers.read(chat.messages.l.last);
+          // this row is about 2nd or later file of the only message
+          message = chat.messages.l.last;
         } else {
-          message = Message.fromRow(row)
-            ..account = this
-            ..chatID = chat.id;
+          message = Message.fromRow(row, this, chat);
           chat.addFirstMessage(message);
         }
         if (row['mf_file_id'] != null) {
@@ -240,6 +236,7 @@ class Account extends ChangeNotifier {
               'has_avatar': hasAvatar ? 1 : 0,
               'cert_pem': certPEM,
               'key_pem': keyPEM,
+              'port': account.port,
             },
           );
           await Config.insert(Config.currAccount, id.l, txn);

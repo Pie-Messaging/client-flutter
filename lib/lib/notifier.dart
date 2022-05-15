@@ -24,7 +24,7 @@ class ListNotifier<E> extends ChangeNotifier {
     notifyListeners();
   }
 
-  operator [](int index) => l[index];
+  E operator [](int index) => l[index];
 
   get length => l.length;
 
@@ -53,7 +53,7 @@ class OrderedListNotifier<E> extends ChangeNotifier {
     notifyListeners();
   }
 
-  operator [](int index) => l[index];
+  E operator [](int index) => l[index];
 
   get length => l.length;
 
@@ -82,7 +82,7 @@ class ListQueueNotifier<E> extends ChangeNotifier {
     notifyListeners();
   }
 
-  operator [](int index) => l.elementAt(index);
+  E operator [](int index) => l.elementAt(index);
 
   get length => l.length;
 
@@ -106,7 +106,7 @@ class MapNotifier<K, V> extends ChangeNotifier {
     notifyListeners();
   }
 
-  operator [](K key) => m[key];
+  V? operator [](K key) => m[key];
 
   get length => m.length;
 

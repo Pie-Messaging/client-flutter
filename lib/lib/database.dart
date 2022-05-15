@@ -21,12 +21,12 @@ Future loadMainDatabase() async {
         CREATE TABLE account (
           id BLOB PRIMARY KEY,
           name TEXT NOT NULL,
-          email TEXT DEFAULT '',
-          bio TEXT DEFAULT '',
-          has_avatar INTEGER DEFAULT 0,
+          email TEXT NOT NULL,
+          bio TEXT NOT NULL,
+          has_avatar INTEGER NOT NULL,
           cert_pem TEXT NOT NULL,
           key_pem TEXT NOT NULL,
-          port INTEGER DEFAULT 0,
+          port INTEGER NOT NULL,
           contact_adding_only_token INTEGER DEFAULT 1
         )
       ''');
@@ -56,10 +56,10 @@ Future<Database> loadAccountDatabase(path) async {
           u_id BLOB PRIMARY KEY,
           u_state INTEGER NOT NULL,
           u_name TEXT NOT NULL,
-          u_email TEXT DEFAULT '',
-          u_bio TEXT DEFAULT '',
-          u_has_avatar INTEGER DEFAULT 0,
-          u_contact_name TEXT DEFAULT '',
+          u_email TEXT NOT NULL,
+          u_bio TEXT NOT NULL,
+          u_has_avatar INTEGER NOT NULL,
+          u_contact_name TEXT NOT NULL,
           u_addr TEXT NOT NULL,
           u_cert_der BLOB NOT NULL
         )
@@ -69,7 +69,7 @@ Future<Database> loadAccountDatabase(path) async {
           c_id BLOB PRIMARY KEY,
           c_type INTEGER NOT NULL,
           c_time INTEGER NOT NULL,
-          c_last_read_msg_time INTEGER NOT NULL,
+          c_first_unread_msg_id BLOB,
           c_num_unread INTEGER NOT NULL
         )
       ''');
@@ -95,13 +95,14 @@ Future<Database> loadAccountDatabase(path) async {
           m_chat_id BLOB NOT NULL,
           m_is_sys_msg INTEGER NOT NULL,
           m_time INTEGER NOT NULL,
-          m_content TEXT DEFAULT '',
+          m_content TEXT NOT NULL,
           m_content_meta TEXT,
           m_sender_id BLOB,
           m_sticker_id BLOB,
           m_forwarded_from_chat_id BLOB,
           m_forwarded_from_msg_id BLOB,
           m_reply_to_id BLOB,
+          m_is_read INTEGER,
           FOREIGN KEY (m_chat_id) REFERENCES chat (c_id) ON DELETE CASCADE
         )
       ''');

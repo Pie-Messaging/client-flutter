@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pie/components/chat_page.dart';
 import 'package:pie/entities/chat.dart';
+import 'package:pie/entities/message.dart';
 import 'package:pie/entities/user.dart';
 import 'package:pie/lib/config.dart';
 import 'package:pie/lib/global.dart';
@@ -105,7 +106,7 @@ class _AddContactPageState extends ConsumerState<AddContactPage> {
                     controller: _nameController,
                     decoration: const InputDecoration(
                       filled: true,
-                      labelText: '联系人名称（即备注，可选）',
+                      labelText: '联系人名称（备注，可选）',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -192,15 +193,19 @@ class _AddContactPageState extends ConsumerState<AddContactPage> {
     _userResult!.user!.contactName = contactName;
     try {
       await _userResult!.user!.addContact(ctx, _userResult!.token!);
-    } catch (_) {
+    } catch (e, s) {
+      logger.e('Failed to add contact', e, s);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('网络错误，请稍后再试')));
       return returnHook();
     }
-    final chat = Chat(account, _userResult!.id!, ChatType.private, time: DateTime.now());
+    final chat = Chat(account, user: _userResult!.user!);
+    final message = Message(account, chat, ID.generate(), DateTime.now(), '已向对方发送联系人添加请求', isSysMsg: true);
+    chat.addMessage(message);
     try {
       await account.db.transaction((txn) async {
         await _userResult!.user!.save(txn);
         await chat.save(txn);
+        await message.save(txn);
       });
     } catch (e) {
       logger.e('Failed to add contact', e);
@@ -208,7 +213,7 @@ class _AddContactPageState extends ConsumerState<AddContactPage> {
       return returnHook();
     }
     account.chats.add(chat);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已发送添加联系人请求')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已发送联系人添加请求')));
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ChatPage(chat)));
     return returnHook();
   }

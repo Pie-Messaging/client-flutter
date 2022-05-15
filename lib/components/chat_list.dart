@@ -118,7 +118,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
                               child: messages.isEmpty
                                   ? Container()
                                   : Text(
-                                      ref.watch(messages.l.last.select((msg) => msg.content)),
+                                      ref.watch(messages.l.last.pro.select((msg) => msg.content)),
                                       style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: Theme.of(context).hintColor),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,

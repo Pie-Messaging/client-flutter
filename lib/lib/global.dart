@@ -21,8 +21,7 @@ final initPro = FutureProvider((ref) async {
   try {
     await init();
   } catch (e, s) {
-    logger.d(e);
-    logger.d(s);
+    logger.e('Failed to init', e, s);
   }
 });
 final accountsPro = ChangeNotifierProvider<ListNotifier<Account>>((_) => ListNotifier([]));

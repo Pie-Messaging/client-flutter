@@ -86,17 +86,27 @@ class Server {
         user.setEmail(request.user.email);
         user.setBio(request.user.bio);
         user.setAvatar(request.user.avatar.toUint8List());
+        user.setContactName('');
         if (user.state == UserState.noRelation) {
-          final chat = Chat(account, id, ChatType.private, time: DateTime.now());
-          if (providers.read(currAccountPro) == account) {
-            user.chat = chat;
-            account.chats.add(chat);
+          late final Chat chat;
+          if (user.chat != null) {
+            chat = user.chat!;
+          } else {
+            chat = Chat(account, user: user, numUnread: 1);
+            if (isCurrAccount) {
+              user.chat = chat;
+              account.chats.add(chat);
+            }
           }
+          final message = Message(account, chat, ID.generate(), DateTime.now(), '对方请求添加你为联系人', isSysMsg: true);
+          chat.addMessage(message);
           await account.db.transaction((txn) async {
             await user.save(txn);
             await chat.save(txn);
+            await message.save(txn);
           });
           logger.d('user saved');
+          user.avatarBytes = null;
           await stream.sendMessage(pb.NetMessage(addContactRes: pb.AddContactRes(status: pb.Status.OK)), 0);
           return;
         }
@@ -118,23 +128,24 @@ class Server {
       ),
     );
     localNotifications.show(user.id.hashCode, user.name, '对方同意添加你为联系人', platformChannelSpecifics, payload: user.id.toHexStr());
-    final message = Message()
-      ..account = account
-      ..chatID = user.id
-      ..id = ID.generate()
-      ..isSysMsg = true
-      ..time = DateTime.now()
-      ..content = '对方同意添加你为联系人'
-      ..senderID = user.id;
-    await message.save();
-    await stream.sendMessage(pb.NetMessage(approvalContactAddingRes: pb.ApprovalContactAddingRes(status: pb.Status.OK)), 0);
-    stream.close();
-    if (providers.read(currAccountPro) == account) {
-      if (user.chat == null) {
-        user.chat = Chat(account, user.id, ChatType.private, time: message.time, user: user);
-        account.chats.add(user.chat!);
+    late final Chat chat;
+    if (user.chat != null) {
+      chat = user.chat!;
+    } else {
+      chat = Chat(account, user: user, numUnread: 1);
+      if (isCurrAccount) {
+        user.chat = chat;
+        account.chats.add(chat);
       }
     }
+    final message = Message(account, chat, ID.generate(), DateTime.now(), '对方同意添加你为联系人', isSysMsg: true);
+    chat.addUnreadMessage(message);
+    await account.db.transaction((txn) async {
+      await message.save(txn);
+      await chat.save(txn);
+    });
+    await stream.sendMessage(pb.NetMessage(approvalContactAddingRes: pb.ApprovalContactAddingRes(status: pb.Status.OK)), 0);
+    stream.close();
   }
 
   Future handleSendMessageReq(int ctx, QuicStream stream, pb.SendMessageReq request) async {
@@ -142,13 +153,17 @@ class Server {
       final pbMessage = request.message;
       if (pbMessage.hasId() && pbMessage.hasContent()) {
         final user = stream.session.user!;
-        final message = Message()
-          ..account = account
-          ..chatID = user.id
-          ..id = pbMessage.id.toID()
-          ..isSysMsg = false
-          ..time = DateTime.now()
-          ..content = pbMessage.content
+        late final Chat chat;
+        if (user.chat != null) {
+          chat = user.chat!;
+        } else {
+          chat = Chat(account, user: user);
+          if (isCurrAccount) {
+            user.chat = chat;
+            account.chats.add(chat);
+          }
+        }
+        final message = Message(account, chat, pbMessage.id.toID(), DateTime.now(), pbMessage.content, isRead: false)
           ..files.addAll(Iterable.generate(pbMessage.files.length, (i) {
             final file = pbMessage.files[i];
             if (file.hasId()) {
@@ -163,8 +178,7 @@ class Server {
             final msgFile = MsgFile(account, MsgFileType.unknown)..name = file.hasName() ? file.name : '';
             account.msgMsgFiles[[pbMessage.id, i]] = msgFile;
             return msgFile;
-          }))
-          ..senderID = user.id;
+          }));
         final platformChannelSpecifics = notifications.NotificationDetails(
           android: notifications.AndroidNotificationDetails(
             account.id.toHexStr(),
@@ -175,11 +189,7 @@ class Server {
           ),
         );
         localNotifications.show(user.id.hashCode, user.name, message.content, platformChannelSpecifics, payload: user.id.toHexStr());
-        if (user.chat == null) {
-          user.chat = Chat(account, user.id, ChatType.private, time: message.time, user: user);
-          if (providers.read(currAccountPro) == account) account.chats.add(user.chat!);
-        }
-        user.chat!.addUnreadMessage(message);
+        chat.addUnreadMessage(message);
         await account.db.transaction((txn) async {
           await message.save(txn);
           for (var i = 0; i < message.files.length; i++) {
@@ -187,7 +197,7 @@ class Server {
             final fileID = await message.files[i].save(txn);
             await MsgFileAss(account, message.id, fileID).save(txn);
           }
-          await user.chat!.save(txn);
+          await chat.save(txn);
         });
         await stream.sendMessage(pb.NetMessage(sendMessageRes: pb.SendMessageRes(status: pb.Status.OK)), 0);
         stream.close();
@@ -316,7 +326,6 @@ class Server {
 
   _handleSession(int ctx, StreamController<Session> streamController, session) async {
     session = session as Session;
-    logger.d('accepted session: ${session.addr!.keys}');
     final start = DateTime.now();
     QuicStream stream;
     while (true) {
@@ -402,6 +411,8 @@ class Server {
       malloc.free(addrDataPtr);
     }
   }
+
+  bool get isCurrAccount => providers.read(currAccountPro) == account;
 }
 
 class _ServerListen {

@@ -80,6 +80,11 @@ class User extends ChangeNotifier {
     notifyListeners();
   }
 
+  setContactName(String contactName) {
+    this.contactName = contactName;
+    notifyListeners();
+  }
+
   Future ensureSession(int ctx) async {
     if (_loadingSession) {
       await loadSession.future;
