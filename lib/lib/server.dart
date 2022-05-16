@@ -88,6 +88,7 @@ class Server {
         user.setAvatar(request.user.avatar.toUint8List());
         user.setContactName('');
         if (user.state == UserState.noRelation) {
+          user.setState(UserState.peerAddingContact);
           late final Chat chat;
           if (user.chat != null) {
             chat = user.chat!;

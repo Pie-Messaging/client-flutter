@@ -85,6 +85,11 @@ class User extends ChangeNotifier {
     notifyListeners();
   }
 
+  setState(UserState state) {
+    this.state = state;
+    notifyListeners();
+  }
+
   Future ensureSession(int ctx) async {
     if (_loadingSession) {
       await loadSession.future;
