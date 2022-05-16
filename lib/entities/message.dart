@@ -50,7 +50,7 @@ class Message extends ChangeNotifier {
         time = DateTime.fromMicrosecondsSinceEpoch(row['m_time'] as int),
         content = row['m_content'] as String,
         senderID = (row['m_sender_id'] as Uint8List).toID(),
-        isRead = row['m_is_read'] == 1 {
+        isRead = row['m_is_read'] != null ? row['m_is_read'] as int == 1 : null {
     pro = ChangeNotifierProvider((_) => this);
   }
 
