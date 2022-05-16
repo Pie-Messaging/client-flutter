@@ -27,8 +27,13 @@ class Tracker {
   toString() => 'Tracker($id, $addr)';
 
   Future<Session> connect(int ctx) async {
-    final sessionPtr = await compute(_connect, SpawnArg(this, ctx));
-    session = Session(sessionPtr);
+    try {
+      final sessionPtr = await compute(_connect, SpawnArg(this, ctx));
+      session = Session(sessionPtr);
+    } catch (_) {
+      providers.read(isNetWorkingPro.notifier).state = false;
+      rethrow;
+    }
     return session!;
   }
 

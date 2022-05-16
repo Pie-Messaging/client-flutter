@@ -44,6 +44,20 @@ class RoutingTable {
     node.value = tracker;
   }
 
+  Future importTrackers(String content) async {
+    final List trackers = jsonDecode(content);
+    await mainDB.transaction((txn) async {
+      final batch = txn.batch();
+      batch.delete('tracker');
+      for (final tracker in trackers) {
+        final id = (tracker['id'] as String).toID();
+        routingTable.addTracker(Tracker(id, (tracker['addr'] as List).toAddr()));
+        batch.insert('tracker', {'id': id.l, 'addr': jsonEncode(tracker['addr'])});
+      }
+      await batch.commit();
+    });
+  }
+
   List<Tracker> getNeighbors(ID id, int numVisiting, [Set<ID>? visitedSet]) {
     var visited = 0;
     final result = <Tracker>[];

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -11,13 +10,11 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pie/core/generated_core_bindings.dart';
 import 'package:pie/entities/account.dart';
-import 'package:pie/lib/address.dart';
 import 'package:pie/lib/config.dart';
 import 'package:pie/lib/database.dart';
 import 'package:pie/lib/global.dart';
 import 'package:pie/lib/id.dart';
 import 'package:pie/lib/log.dart';
-import 'package:pie/lib/tracker.dart';
 
 init() async {
   dataDir = await getApplicationSupportDirectory();
@@ -83,15 +80,9 @@ init() async {
     }(),
     () async {
       if (firstRunning) {
-        final List trackers = jsonDecode(await rootBundle.loadString('assets/trackers.json'));
+        final content = await rootBundle.loadString('assets/trackers.json');
         await loadDB;
-        final batch = mainDB.batch();
-        for (final tracker in trackers) {
-          final id = (tracker['id'] as String).toID();
-          routingTable.addTracker(Tracker(id, (tracker['addr'] as List).toAddr()));
-          batch.insert('tracker', {'id': id.l, 'addr': jsonEncode(tracker['addr'])});
-        }
-        await batch.commit();
+        await routingTable.importTrackers(content);
       } else {
         await loadDB;
         await routingTable.load();
