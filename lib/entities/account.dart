@@ -157,7 +157,7 @@ class Account extends ChangeNotifier {
           LIMIT 1
         )
         LEFT JOIN message_file ON mf_message_id = m_id
-        ORDER BY c_time DESC
+        ORDER BY c_time
         LIMIT $chatListPageLen
       ''',
     );
