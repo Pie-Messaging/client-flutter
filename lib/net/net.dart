@@ -187,8 +187,8 @@ class QuicStream {
       ..ref.data = messageBufPtr.cast<Void>()
       ..ref.len = arg.arg.data.length
       ..ref.cap = arg.arg.data.length;
+    final err = core.StreamSendData(arg.arg.streamPtr, messagePtr.ref, arg.arg.timeout);
     try {
-      final err = core.StreamSendData(arg.arg.streamPtr, messagePtr.ref, arg.arg.timeout);
       checkErr(err);
     } catch (_) {
       rethrow;

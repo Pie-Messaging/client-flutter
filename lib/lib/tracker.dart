@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:ffi';
-import 'dart:isolate';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pie/core/generated_core_bindings.dart';
 import 'package:pie/lib/address.dart';
 import 'package:pie/lib/config.dart';
 import 'package:pie/lib/ffi.dart';
 import 'package:pie/lib/global.dart';
 import 'package:pie/lib/id.dart';
-import 'package:pie/lib/log.dart';
 import 'package:pie/net/net.dart';
 import 'package:pie/protobuf/core.pb.dart' as pb;
 
@@ -28,27 +27,12 @@ class Tracker {
   toString() => 'Tracker($id, $addr)';
 
   Future<Session> connect(int ctx) async {
-    final recvPort = ReceivePort();
-    final errPort = ReceivePort();
-    Isolate.spawn(_connect, SpawnArg(this, ctx, recvPort.sendPort), onError: errPort.sendPort);
-    final completer = Completer<Session>();
-    recvPort.listen((s) {
-      recvPort.close();
-      errPort.close();
-      final sess = Session(s);
-      session = sess;
-      completer.complete(sess);
-      logger.d('connected to tracker: $this');
-    });
-    errPort.listen((error) {
-      recvPort.close();
-      errPort.close();
-      completer.completeError(error);
-    });
-    return await completer.future;
+    final sessionPtr = await compute(_connect, SpawnArg(this, ctx));
+    session = Session(sessionPtr);
+    return session!;
   }
 
-  static _connect(SpawnArg<Tracker, int> arg) {
+  static int _connect(SpawnArg<Tracker, int> arg) {
     final addr = arg.obj.addr.keys.first;
     final addrDataPtr = addr.toNativeUtf8();
     final addrPtr = malloc<GoString>()
@@ -62,13 +46,17 @@ class Tracker {
     final result = core.ConnectTracker(arg.arg, addrPtr.ref, idPtr.ref);
     final session = result.r0;
     final err = result.r1;
-    malloc.free(idPtr);
-    malloc.free(idDataPtr);
-    malloc.free(addrPtr);
-    malloc.free(addrDataPtr);
-    if (err != Error.noErr.index) logger.d('Failed to connect to tracker: $addr');
-    checkErr(err);
-    arg.sendPort!.send(session);
+    try {
+      checkErr(err);
+    } catch (_) {
+      rethrow;
+    } finally {
+      malloc.free(idPtr);
+      malloc.free(idDataPtr);
+      malloc.free(addrPtr);
+      malloc.free(addrDataPtr);
+    }
+    return session;
   }
 
   ensureSession(int ctx) async {

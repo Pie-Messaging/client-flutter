@@ -111,10 +111,10 @@ class Account extends ChangeNotifier {
           addr = addrList.map((k, v) => MapEntry('[$k]:${server.listenPort}', v)).toAddr();
         }(),
       ], eagerError: true);
+      await routingTable.putUser(0, this);
       logger.i('account: $id name:$name addr: ${addr.keys.first}');
-      routingTable.putUser(0, this);
     } catch (e, s) {
-      logger.e('announce error: $e\n$s');
+      logger.e('Failed to announce', e, s);
       scaffoldKey.currentState?.showSnackBar(const SnackBar(content: Text('网络错误，无法通知其他人我的上线')));
     }
   }
