@@ -49,7 +49,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             child: Row(
               children: [
                 Hero(
-                  tag: 'user_avatar',
+                  tag: 'user_avatar_${widget.chat.id}',
                   child: CircleAvatar(
                     radius: 25,
                     backgroundImage: ref.watch(widget.chat.user!.pro.select((user) => user.hasAvatar))
@@ -63,7 +63,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Hero(
-                      tag: 'user_name',
+                      tag: 'user_name_${widget.chat.id}',
                       child: Text(
                         ref.watch(widget.chat.user!.pro.select((user) => user.contactName.isNotEmpty ? user.contactName : user.name)),
                         style: Theme.of(context).textTheme.headline6!.copyWith(color: Colors.white),

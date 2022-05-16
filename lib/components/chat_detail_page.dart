@@ -34,7 +34,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                 ],
               ),
               background: Hero(
-                tag: 'user_avatar',
+                tag: 'user_avatar_${widget.chat.id}',
                 child: Container(
                   alignment: Alignment.bottomLeft,
                   decoration: BoxDecoration(

@@ -78,7 +78,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
             child: Row(
               children: [
                 Hero(
-                  tag: 'user_avatar',
+                  tag: 'user_avatar_${widget.chat.id}',
                   child: CircleAvatar(
                     radius: 35,
                     backgroundImage: ref.watch(widget.chat.user!.pro.select((user) => user.hasAvatar))
@@ -96,7 +96,7 @@ class _ChatTileState extends ConsumerState<ChatTile> {
                           children: [
                             Expanded(
                               child: Hero(
-                                tag: 'user_name',
+                                tag: 'user_name_${widget.chat.id}',
                                 child: Text(
                                   ref.watch(widget.chat.user!.pro.select((user) => user.contactName.isNotEmpty ? user.contactName : user.name)),
                                   style: Theme.of(context).textTheme.headline6,
