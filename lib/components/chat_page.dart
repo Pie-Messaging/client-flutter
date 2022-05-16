@@ -178,13 +178,18 @@ class MessageTile extends ConsumerWidget {
     final isSendFromMe = message.senderID == message.chat.account.id;
     // use task to avoid changing state when building
     Future(() => message.chat.setMessageRead(message));
+    final isSysMsg = message.isSysMsg;
     var row = [
       Flexible(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          padding: isSysMsg ? const EdgeInsets.symmetric(vertical: 3, horizontal: 4) : const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            color: isSendFromMe ? Theme.of(context).primaryColor : chatTileColor,
+            color: isSendFromMe
+                ? Theme.of(context).primaryColor
+                : isSysMsg
+                    ? Colors.grey.shade400
+                    : chatTileColor,
           ),
           child: Column(
             children: [
@@ -200,7 +205,7 @@ class MessageTile extends ConsumerWidget {
                     ),
               Text(
                 ref.watch(message.pro.select((message) => message.content)),
-                style: const TextStyle(fontSize: 18, color: Colors.white),
+                style: TextStyle(fontSize: isSysMsg ? 13 : 18, color: Colors.white),
               ),
             ],
           ),
@@ -221,7 +226,11 @@ class MessageTile extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       child: Row(
-        mainAxisAlignment: isSendFromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isSendFromMe
+            ? MainAxisAlignment.end
+            : isSysMsg
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
         children: row,
       ),
     );
