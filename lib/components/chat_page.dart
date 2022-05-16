@@ -151,7 +151,7 @@ class _MessageListState extends ConsumerState<MessageList> {
       itemBuilder: (context, index) {
         final message = widget.chat.messages[index];
         final isSendFromMe = message.senderID == widget.chat.account.id;
-        // use task to avoid change state when build
+        // use task to avoid changing state when building
         Future(() => widget.chat.setMessageRead(message));
         var row = [
           Flexible(
