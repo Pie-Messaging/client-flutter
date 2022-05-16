@@ -33,34 +33,18 @@ class _HomePageState extends State<HomePage> {
       const ControlPage(),
     ),
   ];
-  late final PageController _pageController;
   late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = _items.indexWhere((item) => item.isDefault);
-    _pageController = PageController(initialPage: _selectedIndex);
-    _pageController.addListener(_onPageChanged);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  _onPageChanged() {
-    setState(() {
-      _selectedIndex = _pageController.page!.toInt();
-    });
   }
 
   _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    _pageController.jumpToPage(_selectedIndex);
   }
 
   @override
@@ -71,19 +55,14 @@ class _HomePageState extends State<HomePage> {
         title: Text(item.title),
         actions: item.appBarActions,
       ),
-      body: PageView(
-        controller: _pageController,
-        children: _items.map((item) => item.body).toList(),
-      ),
+      body: item.body,
       bottomNavigationBar: BottomNavigationBar(
         items: _items.map((item) => item.navBarItem).toList(),
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const AddContactPage()));
-        },
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddContactPage())),
         tooltip: '添加联系人',
         child: const Icon(Icons.person_add),
       ),
