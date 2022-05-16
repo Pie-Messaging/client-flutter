@@ -165,14 +165,14 @@ class _MessageListState extends ConsumerState<MessageList> {
                 children: [
                   for (final file in ref.watch(message.pro.select((msg) => msg.files)))
                     ref.watch(file.loadingPro).when(
-                      loading: () => const CircularProgressIndicator(),
-                      error: (e, _) => CenterError(e),
-                      data: (_) => Image.file(
-                        File(file.path),
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.low,
-                      ),
-                    ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (e, _) => CenterError(e),
+                          data: (_) => Image.file(
+                            File(file.path),
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.low,
+                          ),
+                        ),
                   Text(
                     ref.watch(message.pro.select((message) => message.content)),
                     style: const TextStyle(fontSize: 18, color: Colors.white),
