@@ -148,59 +148,7 @@ class _MessageListState extends ConsumerState<MessageList> {
       controller: _controller,
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: ref.watch(widget.chat.messagesPro).length,
-      itemBuilder: (context, index) {
-        final message = widget.chat.messages[index];
-        final isSendFromMe = message.senderID == widget.chat.account.id;
-        // use task to avoid changing state when building
-        Future(() => widget.chat.setMessageRead(message));
-        var row = [
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: isSendFromMe ? Theme.of(context).primaryColor : chatTileColor,
-              ),
-              child: Column(
-                children: [
-                  for (final file in ref.watch(message.pro.select((msg) => msg.files)))
-                    ref.watch(file.loadingPro).when(
-                          loading: () => const CircularProgressIndicator(),
-                          error: (e, _) => CenterError(e),
-                          data: (_) => Image.file(
-                            File(file.path),
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.low,
-                          ),
-                        ),
-                  Text(
-                    ref.watch(message.pro.select((message) => message.content)),
-                    style: const TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const VerticalDivider(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                formatTime(ref.watch(message.pro.select((message) => message.time))),
-                style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
-              ),
-            ],
-          ),
-        ];
-        if (isSendFromMe) row = row.reversed.toList();
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-          child: Row(
-            mainAxisAlignment: isSendFromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-            children: row,
-          ),
-        );
-      },
+      itemBuilder: (context, index) => MessageTile(widget.chat.messages[index]),
     );
   }
 
@@ -217,6 +165,66 @@ class _MessageListState extends ConsumerState<MessageList> {
     if (len == numMessageLoad) {
       _controller.addListener(_scrollListener);
     }
+  }
+}
+
+class MessageTile extends ConsumerWidget {
+  final Message message;
+
+  const MessageTile(this.message, {Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSendFromMe = message.senderID == message.chat.account.id;
+    // use task to avoid changing state when building
+    Future(() => message.chat.setMessageRead(message));
+    var row = [
+      Flexible(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: isSendFromMe ? Theme.of(context).primaryColor : chatTileColor,
+          ),
+          child: Column(
+            children: [
+              for (final file in ref.watch(message.pro.select((msg) => msg.files)))
+                ref.watch(file.loadingPro).when(
+                      loading: () => const CircularProgressIndicator(),
+                      error: (e, _) => CenterError(e),
+                      data: (_) => Image.file(
+                        File(file.path),
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.low,
+                      ),
+                    ),
+              Text(
+                ref.watch(message.pro.select((message) => message.content)),
+                style: const TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const VerticalDivider(width: 8),
+      Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            formatTime(ref.watch(message.pro.select((message) => message.time))),
+            style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+          ),
+        ],
+      ),
+    ];
+    if (isSendFromMe) row = row.reversed.toList();
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      child: Row(
+        mainAxisAlignment: isSendFromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: row,
+      ),
+    );
   }
 }
 
