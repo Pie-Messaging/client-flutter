@@ -140,7 +140,7 @@ class Account extends ChangeNotifier {
     contacts.addAll(results.map(
       (row) {
         final id = (row['u_id'] as Uint8List).toID();
-        return Contact(this, users.putIfAbsent(id, () => User(id)..account = this).setFromRow(row));
+        return Contact(this, users.putIfAbsent(id, () => User(id)..account = this)..setFromRow(row));
       },
     ));
   }
