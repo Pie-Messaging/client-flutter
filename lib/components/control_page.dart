@@ -218,3 +218,31 @@ class _SwitchAccount extends ConsumerWidget {
     );
   }
 }
+
+class ControlPageMore extends StatelessWidget {
+  const ControlPageMore({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_Menu>(
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<_Menu>>[
+        const PopupMenuItem<_Menu>(
+          value: _Menu.logOut,
+          child: ListTile(
+            leading: Icon(Icons.exit_to_app),
+            title: Text('登出'),
+          ),
+        ),
+      ],
+      onSelected: (_Menu item) {
+        switch (item) {
+          case _Menu.logOut:
+            providers.read(currAccountPro)!.logOut();
+            break;
+        }
+      },
+    );
+  }
+}
+
+enum _Menu { logOut }

@@ -32,7 +32,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     _HomePageItem(
       '控制',
       const BottomNavigationBarItem(icon: Icon(Icons.settings), label: '控制'),
-      [IconButton(icon: const Icon(Icons.edit), onPressed: () {})],
+      [IconButton(icon: const Icon(Icons.edit), onPressed: () {}), const ControlPageMore()],
       const ControlPage(),
     ),
   ];

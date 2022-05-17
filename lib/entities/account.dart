@@ -25,6 +25,7 @@ import 'package:pie/lib/notifier.dart';
 import 'package:pie/lib/server.dart';
 import 'package:pie/net/client.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/utils/utils.dart';
 
 // local user
 class Account extends ChangeNotifier {
@@ -256,13 +257,34 @@ class Account extends ChangeNotifier {
     malloc.free(certPEMDataPtr);
     return account;
   }
+
+  logOut() async {
+    final accounts = providers.read(accountsPro);
+    final index = accounts.l.indexWhere((a) => a.id == id);
+    var i = index + 1;
+    if (i == accounts.l.length) i = index - 1;
+    await Future.wait([
+      mainDB.delete('account', where: 'hex(id) = ?', whereArgs: [hex(id.l)]),
+      mainDB.transaction((txn) async {
+        await txn.delete('account', where: 'hex(id) = ?', whereArgs: [hex(id.l)]);
+        if (i >= 0) {
+          await Config.update(Config.currAccount, accounts[i].id.l, txn);
+        } else {
+          await Config.update(Config.currAccount, null, txn);
+        }
+      }),
+      Directory(accountDir).delete(recursive: true),
+    ]);
+    providers.read(currAccountPro.notifier).set(i >= 0 ? accounts[i] : null);
+    accounts.removeAt(index);
+  }
 }
 
 class AccountNotifier extends StateNotifier<Account?> {
   AccountNotifier([Account? current]) : super(current);
 
-  set(Account current) {
+  set(Account? current) {
     state = current;
-    state!.loadContactsAndChats();
+    state?.loadContactsAndChats();
   }
 }

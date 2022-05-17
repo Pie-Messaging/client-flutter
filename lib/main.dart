@@ -54,7 +54,7 @@ class MainRoute extends ConsumerWidget {
         ),
       ),
       error: (e, _) => CenterError(e),
-      data: (_) => providers.read(accountsPro).isEmpty ? const LoginPage() : const HomePage(),
+      data: (_) => ref.watch(accountsPro.select((accounts) => accounts.isEmpty)) ? const LoginPage() : const HomePage(),
     );
   }
 }
