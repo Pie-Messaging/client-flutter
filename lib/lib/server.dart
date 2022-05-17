@@ -62,6 +62,10 @@ class Server {
           await handleAddContactReq(ctx, stream, message.addContactReq);
           shouldContinue = false;
           break;
+        case pb.NetMessage_Body.approvalContactAddingReq:
+          await handleApprovalContactAddingReq(ctx, stream, message.approvalContactAddingReq);
+          shouldContinue = false;
+          break;
         case pb.NetMessage_Body.sendMessageReq:
           await handleSendMessageReq(ctx, stream, message.sendMessageReq);
           shouldContinue = false;
@@ -71,6 +75,7 @@ class Server {
           shouldContinue = false;
           break;
         default:
+          shouldContinue = false;
           break;
       }
     }
@@ -82,12 +87,12 @@ class Server {
         final id = stream.session.user!.id;
         logger.d('add contact user id: $id');
         final user = stream.session.user!;
-        user.setName(request.user.name);
-        user.setEmail(request.user.email);
-        user.setBio(request.user.bio);
-        user.setAvatar(request.user.avatar.toUint8List());
-        user.setContactName('');
         if (user.state == UserState.noRelation) {
+          user.setName(request.user.name);
+          user.setEmail(request.user.email);
+          user.setBio(request.user.bio);
+          user.setAvatar(request.user.avatar.toUint8List());
+          user.setContactName('');
           user.setState(UserState.peerAddingContact);
           late final Chat chat;
           if (user.chat != null) {
@@ -99,7 +104,7 @@ class Server {
               account.chats.add(chat);
             }
           }
-          final message = Message(account, chat, ID.generate(), DateTime.now(), '对方请求添加你为联系人', isSysMsg: true);
+          final message = Message(account, chat, ID.generate(), DateTime.now(), '对方请求添加你为联系人', isSysMsg: true, isRead: false);
           chat.addMessage(message);
           await account.db.transaction((txn) async {
             await user.save(txn);

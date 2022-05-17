@@ -131,22 +131,17 @@ class User extends ChangeNotifier {
   }
 
   Future approvalContact(int ctx) async {
-    await Future.wait([
-      account.db.update('user', {'u_state': UserState.contactAdded.index}, where: 'hex(u_id) = ?', whereArgs: [hex(id.l)]),
-      () async {
-        ensureSession(ctx);
-        final stream = await session!.sendMessage(pb.NetMessage(approvalContactAddingReq: pb.ApprovalContactAddingReq()), sendMsgTimeout);
-        final response = await stream.recvMessage(recvResTimeout);
-        stream.close();
-        if (response.hasApprovalContactAddingRes()) {
-          if (response.ensureApprovalContactAddingRes().status == pb.Status.OK) {
-            return;
-          }
-        }
-      }(),
-    ]);
-    state = UserState.contactAdded;
-    notifyListeners();
+    ensureSession(ctx);
+    final stream = await session!.sendMessage(pb.NetMessage(approvalContactAddingReq: pb.ApprovalContactAddingReq()), sendMsgTimeout);
+    final response = await stream.recvMessage(recvResTimeout);
+    stream.close();
+    if (response.hasApprovalContactAddingRes()) {
+      if (response.ensureApprovalContactAddingRes().status == pb.Status.OK) {
+        await account.db.update('user', {'u_state': UserState.contactAdded.index}, where: 'hex(u_id) = ?', whereArgs: [hex(id.l)]);
+        state = UserState.contactAdded;
+        notifyListeners();
+      }
+    }
   }
 
   save([Transaction? txn]) async {
