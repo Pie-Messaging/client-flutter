@@ -64,8 +64,8 @@ class _ContactTileState extends ConsumerState<ContactTile> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.all(10),
-      title: Text(ref.watch(widget.contact.user.pro.select((user) => user.name)), style: const TextStyle(fontSize: 15)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      title: Text(ref.watch(widget.contact.user.pro.select((user) => user.name)), style: const TextStyle(fontSize: 18)),
       onTap: () {},
     );
   }
