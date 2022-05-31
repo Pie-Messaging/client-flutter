@@ -60,7 +60,7 @@ class Config {
     await getHandler(txn).insert('config', {'key': key.key, key.column: value}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future update(_ConfigItem key, Object value, [Transaction? txn]) async {
+  static Future update(_ConfigItem key, Object? value, [Transaction? txn]) async {
     await getHandler(txn).update('config', {key.column: value}, where: "key = ?", whereArgs: [key.key]);
   }
 
